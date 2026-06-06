@@ -6,8 +6,8 @@ from keybinds import *
 GRAVITY = -2
 FRICTION = 0.8
 DASH_COOLDOWN = 15
-DASH_SPEED = 30
-DASH_TIME = 8
+DASH_SPEED = 28
+DASH_TIME = 14
 JUMP_STRENGTH = 25
 PLR_SPEED = 3
 
@@ -27,6 +27,7 @@ class Profaned(tk.Tk):
     def __init__(self):
         super().__init__()
 
+        # window
         self.geometry("%ix%i" % WINDOW_DIMENSIONS.tuple)
 
         self.canvas = tk.Canvas(
@@ -39,6 +40,17 @@ class Profaned(tk.Tk):
 
         self.focus_set()
 
+        # textures
+        self.textures = {
+            "johnR": tk.PhotoImage(file='./textures/john-profaned-sword-R.png'),
+            "johnL": tk.PhotoImage(file='./textures/john-profaned-sword-L.png'),
+            "johnSlideR": tk.PhotoImage(file='./textures/john-slide-R.png'),
+            "johnSlideL": tk.PhotoImage(file='./textures/john-slide-L.png'),
+            "johnJumpR": tk.PhotoImage(file='./textures/john-jumping-R.png'),
+            "johnJumpL": tk.PhotoImage(file='./textures/john-jumping-L.png'),
+        }
+
+        # inputs
         self.keysDown = set()
 
         self.bind("<KeyPress>", self._keyPressed)
@@ -85,13 +97,39 @@ class Profaned(tk.Tk):
         screen_x = PLAYER.x + WINDOW_DIMENSIONS.x // 2
         screen_y = WINDOW_DIMENSIONS.y - PLAYER.y
 
-        self.canvas.create_oval(
-            screen_x - 50,
-            screen_y - 200,
-            screen_x + 50,
+        self.canvas.create_rectangle(
+            screen_x - 64,
+            screen_y - 256,
+            screen_x + 64,
             screen_y + 0,
-            fill="#FFFFFF"
+            fill="#000000",
+            outline="#ff0000"
         )
+
+        if PLAYER.dashing:
+            john = self.textures["johnSlideR"] if PLAYER.facing == 1 else self.textures["johnSlideL"]
+
+            self.canvas.create_image(
+                screen_x,
+                screen_y - 64,
+                image=john
+            )
+        elif PLAYER.grounded:
+            john = self.textures["johnR"] if PLAYER.facing == 1 else self.textures["johnL"]
+
+            self.canvas.create_image(
+                screen_x,
+                screen_y - 128,
+                image=john
+            )
+        else:
+            john = self.textures["johnJumpR"] if PLAYER.facing == 1 else self.textures["johnJumpL"]
+
+            self.canvas.create_image(
+                screen_x,
+                screen_y - 128,
+                image=john
+            )
 
     def _keyPressed(self, event) -> None:
         if event.keysym in self.keysDown: return
