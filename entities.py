@@ -16,13 +16,17 @@ class Entity(Vector2):
 
 
 class Player(Entity):
-    def __init__(self, x, y, gravity: float, friction: float, window: Vector2, windowBorders: int):
+    def __init__(self, x, y, gravity: float, friction: float, window: Vector2, windowBorders: int, maxhp):
         super().__init__(x, y)
 
         self.window = window
         self.gravity = gravity
         self.friction = friction
         self.windowBorders = windowBorders
+
+        self.maxhp = maxhp
+        self.hp = maxhp
+        self.hurtT = 0
 
         self.grounded = False
         self.facing = 1
@@ -48,12 +52,12 @@ class Player(Entity):
 
     @property
     def hitbox(self):
-        sx = self.x + self.window.x // 2 + 64 * self.facing
+        sx = self.x + self.window.x // 2 + 96 * self.facing
         sy = self.window.y - self.y
 
         return (
-            Vector2(sx - 64, sy - 192),
-            Vector2(sx + 64, sy - 64)
+            Vector2(sx - 96, sy - 192),
+            Vector2(sx + 96, sy - 64)
         )
 
     def attack(self):
@@ -83,7 +87,6 @@ class Player(Entity):
             self.x = max_x
             self.vx = min(0, self.vx)
 
-        # deadzone
         if abs(self.vx) < 0.4:
             self.vx = 0
 
