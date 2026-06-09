@@ -1,33 +1,43 @@
 import tkinter as tk
-from elementary import *
-from world import *
+import os
+from entities import *
 from keybinds import *
+
+
+DEBUG = False
 
 GRAVITY = -2
 FRICTION = 0.8
+
 DASH_COOLDOWN = 15
 DASH_SPEED = 28
 DASH_TIME = 14
+
 JUMP_STRENGTH = 25
 PLR_SPEED = 3
+STEP_TIME = 8
+
+ATTACK_COOLDOWN = 15
+ATTACK_TIME = 10
+
 
 KB = Keybinds(
     move_left="a",
     move_right="d",
     jump="space",
-    dash="Shift_L"
+    dash="Shift_L",
+    attack="k"
 )
 
-WINDOW_DIMENSIONS = Dim2(1280, 720)
-WORLD = World()
-PLAYER = Player(0, 0, GRAVITY, FRICTION)
+WINDOW_DIMENSIONS = Vector2(1280, 720)
+WINDOW_BORDERS = 80
+PLR = Player(0, 360, GRAVITY, FRICTION, WINDOW_DIMENSIONS, WINDOW_BORDERS)
 
 
 class Profaned(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        # window
         self.geometry("%ix%i" % WINDOW_DIMENSIONS.tuple)
 
         self.canvas = tk.Canvas(
@@ -37,56 +47,82 @@ class Profaned(tk.Tk):
             bg="black"
         )
         self.canvas.pack()
-
         self.focus_set()
 
-        # textures
+        self.walkframe = 0
+
         self.textures = {
-            "johnR": tk.PhotoImage(file='./textures/john-profaned-sword-R.png'),
-            "johnL": tk.PhotoImage(file='./textures/john-profaned-sword-L.png'),
-            "johnSlideR": tk.PhotoImage(file='./textures/john-slide-R.png'),
-            "johnSlideL": tk.PhotoImage(file='./textures/john-slide-L.png'),
-            "johnJumpR": tk.PhotoImage(file='./textures/john-jumping-R.png'),
-            "johnJumpL": tk.PhotoImage(file='./textures/john-jumping-L.png'),
+            "background": tk.PhotoImage(file="./textures/background.png").zoom(4, 4),
+            "plrshadow": tk.PhotoImage(file='./textures/plrshadow60.png').zoom(5, 5)
         }
 
-        # inputs
-        self.keysDown = set()
+        for filename in os.listdir("./textures/R/"):
+            self.textures["%sR" % filename[0:-4]] = tk.PhotoImage(
+                file="./textures/R/%s" % filename
+            ).zoom(4, 4)
 
+        for filename in os.listdir("./textures/L/"):
+            self.textures["%sL" % filename[0:-4]] = tk.PhotoImage(
+                file="./textures/L/%s" % filename
+            ).zoom(4, 4)
+
+        self.keysDown = set()
         self.bind("<KeyPress>", self._keyPressed)
         self.bind("<KeyRelease>", self._keyReleased)
 
-    def run(self):
-        if KB.jump in self.keysDown and PLAYER.grounded:
-            PLAYER.vy = JUMP_STRENGTH
+    def _keyPressed(self, event):
+        self.keysDown.add(event.keysym)
 
-        if not PLAYER.dashing:
+    def _keyReleased(self, event):
+        self.keysDown.discard(event.keysym)
+
+    def run(self):
+        if KB.jump in self.keysDown and PLR.grounded:
+            PLR.vy = JUMP_STRENGTH
+
+        if not (PLR.attacking or PLR.dashing):
             if KB.move_left in self.keysDown:
-                PLAYER.vx -= PLR_SPEED
-                PLAYER.facing = -1
+                PLR.vx -= PLR_SPEED
+                PLR.facing = -1
 
             if KB.move_right in self.keysDown:
-                PLAYER.vx += PLR_SPEED
-                PLAYER.facing = 1
+                PLR.vx += PLR_SPEED
+                PLR.facing = 1
 
-        if PLAYER.dashCD > 0:
-            PLAYER.dashCD -= 1
+        PLR.dashCD = max(0, PLR.dashCD - 1)
+        PLR.attackCD = max(0, PLR.attackCD - 1)
 
-        if KB.dash in self.keysDown and PLAYER.dashCD == 0 and not PLAYER.dashing:
-            PLAYER.dashing = True
-            PLAYER.dash_time = DASH_TIME
-            PLAYER.vx = PLAYER.facing * DASH_SPEED
-            PLAYER.dashCD = DASH_COOLDOWN
+        if KB.dash in self.keysDown \
+           and PLR.dashCD == 0 \
+           and PLR.grounded \
+           and not (PLR.dashing or PLR.attacking):
 
-        if PLAYER.dashing:
-            PLAYER.vx = PLAYER.facing * DASH_SPEED
+            PLR.dashing = True
+            PLR.dashT = DASH_TIME
+            PLR.dashCD = DASH_COOLDOWN
+            PLR.vx = PLR.facing * DASH_SPEED
 
-            PLAYER.dash_time -= 1
+        if PLR.dashing:
+            PLR.vx = PLR.facing * DASH_SPEED
+            PLR.dashT -= 1
+            if PLR.dashT <= 0:
+                PLR.dashing = False
 
-            if PLAYER.dash_time <= 0:
-                PLAYER.dashing = False
+        if KB.attack in self.keysDown \
+           and PLR.attackCD == 0 \
+           and PLR.grounded \
+           and not (PLR.dashing or PLR.attacking):
 
-        PLAYER.update()
+            PLR.attacking = True
+            PLR.attackT = ATTACK_TIME
+            PLR.attackCD = ATTACK_COOLDOWN
+
+        if PLR.attacking:
+            PLR.attackT -= 1
+            if PLR.attackT <= 0:
+                PLR.attacking = False
+
+        PLR.update()
         self.render()
 
         self.after(20, self.run)
@@ -94,52 +130,59 @@ class Profaned(tk.Tk):
     def render(self):
         self.canvas.delete("all")
 
-        screen_x = PLAYER.x + WINDOW_DIMENSIONS.x // 2
-        screen_y = WINDOW_DIMENSIONS.y - PLAYER.y
+        hitbox = PLR.hitbox
+        hurtbox = PLR.hurtbox
 
-        self.canvas.create_rectangle(
-            screen_x - 64,
-            screen_y - 256,
-            screen_x + 64,
-            screen_y + 0,
-            fill="#000000",
-            outline="#ff0000"
+        self.canvas.create_image(640, 360, image=self.textures["background"])
+        self.canvas.create_image(PLR.x + 640, 640, image=self.textures["plrshadow"])
+
+        if DEBUG:
+            if not PLR.dashing:
+                self.canvas.create_rectangle(
+                    hurtbox[0].x, hurtbox[0].y,
+                    hurtbox[1].x, hurtbox[1].y,
+                    outline="#ff0000"
+                )
+
+            if PLR.attacking:
+                self.canvas.create_rectangle(
+                    hitbox[0].x, hitbox[0].y,
+                    hitbox[1].x, hitbox[1].y,
+                    outline="#ffff00"
+                )
+
+        img = lambda n: self.textures[n]
+
+        if PLR.attacking:
+            sprite = "plrattackR" if PLR.facing == 1 else "plrattackL"
+            offset = (128, 128) if PLR.facing == 1 else (0, 128)
+
+        elif PLR.dashing:
+            sprite = "plrslideR" if PLR.facing == 1 else "plrslideL"
+            offset = (64, 192)
+
+        elif PLR.grounded:
+            if PLR.vx == 0:
+                sprite = "plrR" if PLR.facing == 1 else "plrL"
+            else:
+                sprite = ("plrwalk0R" if PLR.facing == 1 else "plrwalk0L") \
+                    if self.walkframe < STEP_TIME else \
+                    ("plrwalk1R" if PLR.facing == 1 else "plrwalk1L")
+
+                self.walkframe = (self.walkframe + 1) % (STEP_TIME * 2)
+
+            offset = (64, 128)
+
+        else:
+            sprite = "plrairborneR" if PLR.facing == 1 else "plrairborneL"
+            offset = (64, 128)
+
+        self.canvas.create_image(
+            hurtbox[0].x + offset[0],
+            hurtbox[0].y + offset[1],
+            image=img(sprite)
         )
 
-        if PLAYER.dashing:
-            john = self.textures["johnSlideR"] if PLAYER.facing == 1 else self.textures["johnSlideL"]
-
-            self.canvas.create_image(
-                screen_x,
-                screen_y - 64,
-                image=john
-            )
-        elif PLAYER.grounded:
-            john = self.textures["johnR"] if PLAYER.facing == 1 else self.textures["johnL"]
-
-            self.canvas.create_image(
-                screen_x,
-                screen_y - 128,
-                image=john
-            )
-        else:
-            john = self.textures["johnJumpR"] if PLAYER.facing == 1 else self.textures["johnJumpL"]
-
-            self.canvas.create_image(
-                screen_x,
-                screen_y - 128,
-                image=john
-            )
-
-    def _keyPressed(self, event) -> None:
-        if event.keysym in self.keysDown: return
-
-        print(event.keysym)
-        self.keysDown.add(event.keysym)
-
-    def _keyReleased(self, event) -> None:
-        print(event.keysym)
-        self.keysDown.discard(event.keysym)
 
 if __name__ == "__main__":
     game = Profaned()
