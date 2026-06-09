@@ -4,7 +4,7 @@ from entities import *
 from keybinds import *
 
 
-DEBUG = True
+DEBUG = False
 
 GRAVITY = -2
 FRICTION = 0.8
