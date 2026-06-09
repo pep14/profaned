@@ -9,6 +9,10 @@ DEBUG = True
 GRAVITY = -2
 FRICTION = 0.8
 
+MAXHP = 5
+HURT_COOLDOWN = 10
+HURT_TIME = 0
+
 DASH_COOLDOWN = 15
 DASH_SPEED = 28
 DASH_TIME = 14
@@ -26,12 +30,13 @@ KB = Keybinds(
     move_right="d",
     jump="space",
     dash="Shift_L",
-    attack="k"
+    attack="k",
+    debughit="h"
 )
 
 WINDOW_DIMENSIONS = Vector2(1280, 720)
 WINDOW_BORDERS = 80
-PLR = Player(0, 360, GRAVITY, FRICTION, WINDOW_DIMENSIONS, WINDOW_BORDERS)
+PLR = Player(0, 360, GRAVITY, FRICTION, WINDOW_DIMENSIONS, WINDOW_BORDERS, MAXHP)
 
 
 class Profaned(tk.Tk):
@@ -53,7 +58,10 @@ class Profaned(tk.Tk):
 
         self.textures = {
             "background": tk.PhotoImage(file="./textures/background.png").zoom(4, 4),
-            "plrshadow": tk.PhotoImage(file='./textures/plrshadow60.png').zoom(5, 5)
+            "plrshadow": tk.PhotoImage(file='./textures/plrshadow60.png').zoom(5, 5),
+
+            "hp": tk.PhotoImage(file='./textures/hitpoint.png').zoom(4, 4),
+            "hpe": tk.PhotoImage(file='./textures/hitpoint_empty.png').zoom(4, 4),
         }
 
         for filename in os.listdir("./textures/R/"):
@@ -77,6 +85,19 @@ class Profaned(tk.Tk):
         self.keysDown.discard(event.keysym)
 
     def run(self):
+        global HURT_TIME
+
+        if PLR.hp <= 0:
+            self.destroy()
+            return
+
+        if KB.debughit in self.keysDown and HURT_TIME == 0:
+            PLR.hp -= 1
+            HURT_TIME = HURT_COOLDOWN
+        
+        if HURT_TIME > 0:
+            HURT_TIME -= 1
+
         if KB.jump in self.keysDown and PLR.grounded:
             PLR.vy = JUMP_STRENGTH
 
@@ -135,6 +156,12 @@ class Profaned(tk.Tk):
 
         self.canvas.create_image(640, 360, image=self.textures["background"])
         self.canvas.create_image(PLR.x + 640, 640, image=self.textures["plrshadow"])
+
+        for x in range(PLR.hp):
+            self.canvas.create_image(32 + x * 32, 32, image=self.textures["hp"])
+        
+        for x in range(PLR.maxhp - PLR.hp):
+            self.canvas.create_image(32 + (PLR.hp + x) * 32, 32, image=self.textures["hpe"])
 
         img = lambda n: self.textures[n]
 
