@@ -4,7 +4,7 @@ from entities import *
 from keybinds import *
 
 
-DEBUG = False
+DEBUG = True
 
 GRAVITY = -2
 FRICTION = 0.8
@@ -136,21 +136,6 @@ class Profaned(tk.Tk):
         self.canvas.create_image(640, 360, image=self.textures["background"])
         self.canvas.create_image(PLR.x + 640, 640, image=self.textures["plrshadow"])
 
-        if DEBUG:
-            if not PLR.dashing:
-                self.canvas.create_rectangle(
-                    hurtbox[0].x, hurtbox[0].y,
-                    hurtbox[1].x, hurtbox[1].y,
-                    outline="#ff0000"
-                )
-
-            if PLR.attacking:
-                self.canvas.create_rectangle(
-                    hitbox[0].x, hitbox[0].y,
-                    hitbox[1].x, hitbox[1].y,
-                    outline="#ffff00"
-                )
-
         img = lambda n: self.textures[n]
 
         if PLR.attacking:
@@ -182,6 +167,21 @@ class Profaned(tk.Tk):
             hurtbox[0].y + offset[1],
             image=img(sprite)
         )
+
+        if DEBUG:
+            if not PLR.dashing:
+                self.canvas.create_rectangle(
+                    hurtbox[0].x, hurtbox[0].y,
+                    hurtbox[1].x, hurtbox[1].y,
+                    outline="#ff0000"
+                )
+
+            if PLR.attacking:
+                self.canvas.create_rectangle(
+                    hitbox[0].x, hitbox[0].y,
+                    hitbox[1].x, hitbox[1].y,
+                    outline="#ffff00"
+                )
 
 
 if __name__ == "__main__":

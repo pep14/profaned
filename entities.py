@@ -48,12 +48,12 @@ class Player(Entity):
 
     @property
     def hitbox(self):
-        sx = self.x + self.window.x // 2 + 64 * self.facing
+        sx = self.x + self.window.x // 2 + 96 * self.facing
         sy = self.window.y - self.y
 
         return (
-            Vector2(sx - 64, sy - 192),
-            Vector2(sx + 64, sy - 64)
+            Vector2(sx - 96, sy - 192),
+            Vector2(sx + 96, sy - 64)
         )
 
     def attack(self):
