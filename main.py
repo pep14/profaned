@@ -1,7 +1,9 @@
 import tkinter as tk
-from elementary import *
+from entities import *
 from world import *
 from keybinds import *
+
+DEBUG = True
 
 GRAVITY = -2
 FRICTION = 0.8
@@ -10,17 +12,20 @@ DASH_SPEED = 28
 DASH_TIME = 14
 JUMP_STRENGTH = 25
 PLR_SPEED = 3
+ATTACK_TIME = 10
+ATTACK_COOLDOWN = 15
 
 KB = Keybinds(
     move_left="a",
     move_right="d",
     jump="space",
-    dash="Shift_L"
+    dash="Shift_L",
+    attack="k"
 )
 
-WINDOW_DIMENSIONS = Dim2(1280, 720)
+WINDOW_DIMENSIONS = Vector2(1280, 720)
 WORLD = World()
-PLAYER = Player(0, 0, GRAVITY, FRICTION)
+PLAYER = Player(0, 0, GRAVITY, FRICTION, WINDOW_DIMENSIONS)
 
 
 class Profaned(tk.Tk):
@@ -48,6 +53,8 @@ class Profaned(tk.Tk):
             "johnSlideL": tk.PhotoImage(file='./textures/john-slide-L.png'),
             "johnJumpR": tk.PhotoImage(file='./textures/john-jumping-R.png'),
             "johnJumpL": tk.PhotoImage(file='./textures/john-jumping-L.png'),
+            "johnAttackR": tk.PhotoImage(file='./textures/john-attack-R.png'),
+            "johnAttackL": tk.PhotoImage(file='./textures/john-attack-L.png'),
         }
 
         # inputs
@@ -60,7 +67,7 @@ class Profaned(tk.Tk):
         if KB.jump in self.keysDown and PLAYER.grounded:
             PLAYER.vy = JUMP_STRENGTH
 
-        if not PLAYER.dashing:
+        if not (PLAYER.attacking or PLAYER.dashing):
             if KB.move_left in self.keysDown:
                 PLAYER.vx -= PLR_SPEED
                 PLAYER.facing = -1
@@ -72,19 +79,33 @@ class Profaned(tk.Tk):
         if PLAYER.dashCD > 0:
             PLAYER.dashCD -= 1
 
-        if KB.dash in self.keysDown and PLAYER.dashCD == 0 and not PLAYER.dashing:
+        if KB.dash in self.keysDown and PLAYER.dashCD == 0 and not (PLAYER.dashing or PLAYER.attacking):
             PLAYER.dashing = True
-            PLAYER.dash_time = DASH_TIME
+            PLAYER.dashT = DASH_TIME
             PLAYER.vx = PLAYER.facing * DASH_SPEED
             PLAYER.dashCD = DASH_COOLDOWN
 
         if PLAYER.dashing:
             PLAYER.vx = PLAYER.facing * DASH_SPEED
 
-            PLAYER.dash_time -= 1
+            PLAYER.dashT -= 1
 
-            if PLAYER.dash_time <= 0:
+            if PLAYER.dashT <= 0:
                 PLAYER.dashing = False
+
+        if PLAYER.attackCD > 0:
+            PLAYER.attackCD -= 1
+
+        if KB.attack in self.keysDown and PLAYER.attackCD == 0 and not (PLAYER.dashing or PLAYER.attacking):
+            PLAYER.attacking = True
+            PLAYER.attackT = ATTACK_TIME
+            PLAYER.attackCD = ATTACK_COOLDOWN
+
+        if PLAYER.attacking:
+            PLAYER.attackT -= 1
+
+            if PLAYER.attackT <= 0:
+                PLAYER.attacking = False
 
         PLAYER.update()
         self.render()
@@ -94,40 +115,62 @@ class Profaned(tk.Tk):
     def render(self):
         self.canvas.delete("all")
 
-        screen_x = PLAYER.x + WINDOW_DIMENSIONS.x // 2
-        screen_y = WINDOW_DIMENSIONS.y - PLAYER.y
+        hitbox = PLAYER.hitbox
+        hurtbox = PLAYER.hurtbox
 
-        self.canvas.create_rectangle(
-            screen_x - 64,
-            screen_y - 256,
-            screen_x + 64,
-            screen_y + 0,
-            fill="#000000",
-            outline="#ff0000"
-        )
+        if DEBUG:
+            if not PLAYER.dashing:
+                self.canvas.create_rectangle(
+                    hurtbox[0].x,
+                    hurtbox[0].y,
+                    hurtbox[1].x,
+                    hurtbox[1].y,
+                    outline="#ff0000"
+                )
+            if PLAYER.attacking:
+                self.canvas.create_rectangle(
+                    hitbox[0].x,
+                    hitbox[0].y,
+                    hitbox[1].x,
+                    hitbox[1].y,
+                    outline="#ffff00"
+                )
 
-        if PLAYER.dashing:
+        if PLAYER.attacking:
+            if PLAYER.facing == 1:
+                self.canvas.create_image(
+                    hurtbox[0].x + 98,
+                    hurtbox[0].y + 128,
+                    image=self.textures["johnAttackR"]
+                )
+            else:
+                self.canvas.create_image(
+                    hurtbox[0].x + 30,
+                    hurtbox[0].y + 128,
+                    image=self.textures["johnAttackL"]
+                )
+        elif PLAYER.dashing:
             john = self.textures["johnSlideR"] if PLAYER.facing == 1 else self.textures["johnSlideL"]
 
             self.canvas.create_image(
-                screen_x,
-                screen_y - 64,
+                hurtbox[0].x + 64,
+                hurtbox[0].y + 192,
                 image=john
             )
         elif PLAYER.grounded:
             john = self.textures["johnR"] if PLAYER.facing == 1 else self.textures["johnL"]
 
             self.canvas.create_image(
-                screen_x,
-                screen_y - 128,
+                hurtbox[0].x + 64,
+                hurtbox[0].y + 128,
                 image=john
             )
         else:
             john = self.textures["johnJumpR"] if PLAYER.facing == 1 else self.textures["johnJumpL"]
 
             self.canvas.create_image(
-                screen_x,
-                screen_y - 128,
+                hurtbox[0].x + 64,
+                hurtbox[0].y + 128,
                 image=john
             )
 

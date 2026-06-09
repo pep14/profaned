@@ -1,5 +1,5 @@
 import json
-from elementary import *
+from entities import *
 
 
 class World:
