@@ -1,19 +1,24 @@
 import tkinter as tk
 from entities import *
-from world import *
 from keybinds import *
 
-DEBUG = True
+
+DEBUG = False
 
 GRAVITY = -2
 FRICTION = 0.8
+
 DASH_COOLDOWN = 15
 DASH_SPEED = 28
 DASH_TIME = 14
+
 JUMP_STRENGTH = 25
 PLR_SPEED = 3
-ATTACK_TIME = 10
+STEP_TIME = 8
+
 ATTACK_COOLDOWN = 15
+ATTACK_TIME = 10
+
 
 KB = Keybinds(
     move_left="a",
@@ -24,8 +29,8 @@ KB = Keybinds(
 )
 
 WINDOW_DIMENSIONS = Vector2(1280, 720)
-WORLD = World()
-PLAYER = Player(0, 0, GRAVITY, FRICTION, WINDOW_DIMENSIONS)
+WINDOW_BORDERS = 80
+PLAYER = Player(0, 360, GRAVITY, FRICTION, WINDOW_DIMENSIONS, WINDOW_BORDERS)
 
 
 class Profaned(tk.Tk):
@@ -46,15 +51,22 @@ class Profaned(tk.Tk):
         self.focus_set()
 
         # textures
+        self.walkframe = 0
         self.textures = {
-            "johnR": tk.PhotoImage(file='./textures/john-profaned-sword-R.png'),
-            "johnL": tk.PhotoImage(file='./textures/john-profaned-sword-L.png'),
-            "johnSlideR": tk.PhotoImage(file='./textures/john-slide-R.png'),
-            "johnSlideL": tk.PhotoImage(file='./textures/john-slide-L.png'),
-            "johnJumpR": tk.PhotoImage(file='./textures/john-jumping-R.png'),
-            "johnJumpL": tk.PhotoImage(file='./textures/john-jumping-L.png'),
-            "johnAttackR": tk.PhotoImage(file='./textures/john-attack-R.png'),
-            "johnAttackL": tk.PhotoImage(file='./textures/john-attack-L.png'),
+            "background": tk.PhotoImage(file="./textures/background.png").zoom(4, 4),
+            "plrshadow": tk.PhotoImage(file='./textures/plrshadow60.png').zoom(5, 5),
+            "johnR": tk.PhotoImage(file='./textures/R/plrsword.png').zoom(4, 4),
+            "johnL": tk.PhotoImage(file='./textures/L/plrsword.png').zoom(4, 4),
+            "johnSlideR": tk.PhotoImage(file='./textures/R/plrslide.png').zoom(4, 4),
+            "johnSlideL": tk.PhotoImage(file='./textures/L/plrslide.png').zoom(4, 4),
+            "johnJumpR": tk.PhotoImage(file='./textures/R/plrairborne.png').zoom(4, 4),
+            "johnJumpL": tk.PhotoImage(file='./textures/L/plrairborne.png').zoom(4, 4),
+            "johnAttackR": tk.PhotoImage(file='./textures/R/plrattack.png').zoom(4, 4),
+            "johnAttackL": tk.PhotoImage(file='./textures/L/plrattack.png').zoom(4, 4),
+            "johnWalk0R": tk.PhotoImage(file='./textures/R/plrwalk0.png').zoom(4, 4),
+            "johnWalk0L": tk.PhotoImage(file='./textures/L/plrwalk0.png').zoom(4, 4),
+            "johnWalk1R": tk.PhotoImage(file='./textures/R/plrwalk1.png').zoom(4, 4),
+            "johnWalk1L": tk.PhotoImage(file='./textures/L/plrwalk1.png').zoom(4, 4),
         }
 
         # inputs
@@ -79,7 +91,7 @@ class Profaned(tk.Tk):
         if PLAYER.dashCD > 0:
             PLAYER.dashCD -= 1
 
-        if KB.dash in self.keysDown and PLAYER.dashCD == 0 and not (PLAYER.dashing or PLAYER.attacking):
+        if KB.dash in self.keysDown and PLAYER.dashCD == 0 and PLAYER.grounded and not (PLAYER.dashing or PLAYER.attacking):
             PLAYER.dashing = True
             PLAYER.dashT = DASH_TIME
             PLAYER.vx = PLAYER.facing * DASH_SPEED
@@ -96,7 +108,7 @@ class Profaned(tk.Tk):
         if PLAYER.attackCD > 0:
             PLAYER.attackCD -= 1
 
-        if KB.attack in self.keysDown and PLAYER.attackCD == 0 and not (PLAYER.dashing or PLAYER.attacking):
+        if KB.attack in self.keysDown and PLAYER.attackCD == 0 and PLAYER.grounded and not (PLAYER.dashing or PLAYER.attacking):
             PLAYER.attacking = True
             PLAYER.attackT = ATTACK_TIME
             PLAYER.attackCD = ATTACK_COOLDOWN
@@ -115,8 +127,12 @@ class Profaned(tk.Tk):
     def render(self):
         self.canvas.delete("all")
 
+        self.canvas.create_image(640, 360, image=self.textures["background"])
+
         hitbox = PLAYER.hitbox
         hurtbox = PLAYER.hurtbox
+
+        self.canvas.create_image(PLAYER.x + 640, 640, image=self.textures["plrshadow"])
 
         if DEBUG:
             if not PLAYER.dashing:
@@ -139,13 +155,13 @@ class Profaned(tk.Tk):
         if PLAYER.attacking:
             if PLAYER.facing == 1:
                 self.canvas.create_image(
-                    hurtbox[0].x + 98,
+                    hurtbox[0].x + 128,
                     hurtbox[0].y + 128,
                     image=self.textures["johnAttackR"]
                 )
             else:
                 self.canvas.create_image(
-                    hurtbox[0].x + 30,
+                    hurtbox[0].x + 0,
                     hurtbox[0].y + 128,
                     image=self.textures["johnAttackL"]
                 )
@@ -158,7 +174,14 @@ class Profaned(tk.Tk):
                 image=john
             )
         elif PLAYER.grounded:
-            john = self.textures["johnR"] if PLAYER.facing == 1 else self.textures["johnL"]
+            if PLAYER.vx == 0:
+                john = self.textures["johnR"] if PLAYER.facing == 1 else self.textures["johnL"]
+            elif self.walkframe < STEP_TIME:
+                john = self.textures["johnWalk0R"] if PLAYER.facing == 1 else self.textures["johnWalk0L"]
+                self.walkframe = (self.walkframe + 1) % (STEP_TIME * 2)
+            else:
+                john = self.textures["johnWalk1R"] if PLAYER.facing == 1 else self.textures["johnWalk1L"]
+                self.walkframe = (self.walkframe + 1) % (STEP_TIME * 2)
 
             self.canvas.create_image(
                 hurtbox[0].x + 64,
@@ -177,11 +200,9 @@ class Profaned(tk.Tk):
     def _keyPressed(self, event) -> None:
         if event.keysym in self.keysDown: return
 
-        print(event.keysym)
         self.keysDown.add(event.keysym)
 
     def _keyReleased(self, event) -> None:
-        print(event.keysym)
         self.keysDown.discard(event.keysym)
 
 if __name__ == "__main__":

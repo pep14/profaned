@@ -16,11 +16,12 @@ class Entity(Vector2):
 
 
 class Player(Entity):
-    def __init__(self, x, y, gravity, friction, window: Vector2):
+    def __init__(self, x, y, gravity: float, friction: float, window: Vector2, windowBorders: int):
         super().__init__(x, y)
         self.window = window
         self.gravity = gravity
         self.friction = friction
+        self.windowBorders = windowBorders
         self.grounded = False
         self.facing = 1
         self.dashing = False
@@ -60,12 +61,30 @@ class Player(Entity):
         self.x += self.vx
         self.y += self.vy
 
-        if self.y < 0:
-            self.y = 0
+        if self.y < self.windowBorders:
+            self.y = self.windowBorders
             self.vy = 0
             self.grounded = True
         else:
             self.grounded = False
+
+        min_x = -self.window.x // 2 + self.windowBorders + 64
+        max_x = self.window.x // 2 - self.windowBorders - 64
+
+        if self.x < min_x:
+            self.x = min_x
+
+            if self.vx < 0:
+                self.vx = 0
+
+        elif self.x > max_x:
+            self.x = max_x
+
+            if self.vx > 0:
+                self.vx = 0
+
+        if abs(self.vx) < 0.4:
+            self.vx = 0
 
         if not self.dashing:
             self.vx *= self.friction
