@@ -6,7 +6,7 @@ class Vector2:
     @property
     def tuple(self) -> tuple:
         return self.x, self.y
-    
+
 
 class Entity(Vector2):
     def __init__(self, x, y):
@@ -18,46 +18,50 @@ class Entity(Vector2):
 class Player(Entity):
     def __init__(self, x, y, gravity: float, friction: float, window: Vector2, windowBorders: int):
         super().__init__(x, y)
+
         self.window = window
         self.gravity = gravity
         self.friction = friction
         self.windowBorders = windowBorders
+
         self.grounded = False
         self.facing = 1
+
         self.dashing = False
+        self.attacking = False
+
         self.dashT = 0
         self.dashCD = 0
-        self.attacking = False
+
         self.attackT = 0
         self.attackCD = 0
 
     @property
     def hurtbox(self):
-        screen_x = self.x + self.window.x // 2
-        screen_y = self.window.y - self.y
-        
+        sx = self.x + self.window.x // 2
+        sy = self.window.y - self.y
+
         return (
-            Vector2(screen_x - 64, screen_y - 256),
-            Vector2(screen_x + 64, screen_y - 0)
+            Vector2(sx - 64, sy - 256),
+            Vector2(sx + 64, sy)
         )
-    
+
     @property
     def hitbox(self):
-        screen_x = self.x + self.window.x // 2 + 64 * self.facing
-        screen_y = self.window.y - self.y
+        sx = self.x + self.window.x // 2 + 64 * self.facing
+        sy = self.window.y - self.y
 
         return (
-            Vector2(screen_x - 64, screen_y - 192),
-            Vector2(screen_x + 64, screen_y - 64)
+            Vector2(sx - 64, sy - 192),
+            Vector2(sx + 64, sy - 64)
         )
 
-
     def attack(self):
-        self.attacking = True
+        if not self.attacking:
+            self.attacking = True
 
     def update(self):
         self.vy += self.gravity
-
         self.x += self.vx
         self.y += self.vy
 
@@ -73,16 +77,13 @@ class Player(Entity):
 
         if self.x < min_x:
             self.x = min_x
-
-            if self.vx < 0:
-                self.vx = 0
+            self.vx = max(0, self.vx)
 
         elif self.x > max_x:
             self.x = max_x
+            self.vx = min(0, self.vx)
 
-            if self.vx > 0:
-                self.vx = 0
-
+        # deadzone
         if abs(self.vx) < 0.4:
             self.vx = 0
 
