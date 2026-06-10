@@ -54,6 +54,9 @@ class Profaned(tk.Tk):
         self.canvas.pack()
         self.focus_set()
 
+        self.title("profaned")
+        self.iconbitmap("./textures/icon.ico")
+
         self.walkframe = 0
 
         self.textures = {
