@@ -178,7 +178,7 @@ class Profaned(tk.Tk):
 
         elif PLR.grounded:
             if PLR.vx == 0:
-                sprite = "plrR" if PLR.facing == 1 else "plrL"
+                sprite = "plrswordR" if PLR.facing == 1 else "plrswordL"
             else:
                 sprite = ("plrwalk0R" if PLR.facing == 1 else "plrwalk0L") \
                     if self.walkframe < STEP_TIME else \
