@@ -1,5 +1,3 @@
-import tkinter as tk
-import os
 from entities import *
 from keybinds import *
 
@@ -13,7 +11,8 @@ KB = Keybinds(
     debughit="h"
 )
 
-PLR = Player(0, 360, GRAVITY, FRICTION, WINDOW_DIMENSIONS, WINDOW_BORDERS, MAXHP)
+PLR = Player(-240, 360)
+PIDER = Pider(400, 180)
 
 
 class Profaned(tk.Tk):
@@ -34,8 +33,6 @@ class Profaned(tk.Tk):
         self.title("profaned")
         self.iconbitmap("./textures/icon.ico")
 
-        self.walkframe = 0
-
         self.textures = {
             "background": tk.PhotoImage(file="./textures/background.png").zoom(4, 4),
             "plrshadow": tk.PhotoImage(file='./textures/plrshadow60.png').zoom(5, 5),
@@ -54,6 +51,11 @@ class Profaned(tk.Tk):
                 file="./textures/L/%s" % filename
             ).zoom(4, 4)
 
+        for filename in os.listdir("./textures/pider/"):
+            self.textures[filename[0:-4]] = tk.PhotoImage(
+                file="./textures/pider/%s" % filename
+            ).zoom(4, 4)
+
         self.keysDown = set()
         self.bind("<KeyPress>", self._keyPressed)
         self.bind("<KeyRelease>", self._keyReleased)
@@ -70,18 +72,20 @@ class Profaned(tk.Tk):
         if PLR.hp <= 0:
             self.destroy()
             return
-
-        if KB.debughit in self.keysDown and HURT_TIME == 0:
-            PLR.hp -= 1
-            HURT_TIME = HURT_COOLDOWN
         
         if HURT_TIME > 0:
             HURT_TIME -= 1
 
+        if HURT_TIME == 0 and box_overlap(PLR.hurtbox, PIDER.passiveHitbox):
+            PLR.dashing = False
+            PLR.hp -= 1
+            PLR.vx = -20
+            HURT_TIME = HURT_COOLDOWN
+
         if KB.jump in self.keysDown and PLR.grounded:
             PLR.vy = JUMP_STRENGTH
 
-        if not (PLR.attacking or PLR.dashing):
+        if HURT_TIME == 0 and not  (PLR.attacking or PLR.dashing):
             if KB.move_left in self.keysDown:
                 PLR.vx -= PLR_SPEED
                 PLR.facing = -1
@@ -124,6 +128,7 @@ class Profaned(tk.Tk):
                 PLR.attacking = False
 
         PLR.update()
+        PIDER.update(PLR.x)
         self.render()
 
         self.after(20, self.run)
@@ -131,10 +136,8 @@ class Profaned(tk.Tk):
     def render(self):
         self.canvas.delete("all")
 
-        plrHitbox = PLR.hitbox
-        plrHurtbox = PLR.hurtbox
-
         self.canvas.create_image(640, 360, image=self.textures["background"])
+
         self.canvas.create_image(PLR.x + 640, 640, image=self.textures["plrshadow"])
 
         for x in range(PLR.hp):
@@ -143,52 +146,41 @@ class Profaned(tk.Tk):
         for x in range(MAXHP - PLR.hp):
             self.canvas.create_image(32 + (PLR.hp + x) * 32, 32, image=self.textures["hpe"])
 
-        img = lambda n: self.textures[n]
-
-        if PLR.attacking:
-            sprite = "plrattackR" if PLR.facing == 1 else "plrattackL"
-            offset = (128, 128) if PLR.facing == 1 else (0, 128)
-
-        elif PLR.dashing:
-            sprite = "plrslideR" if PLR.facing == 1 else "plrslideL"
-            offset = (64, 192)
-
-        elif PLR.grounded:
-            if PLR.vx == 0:
-                sprite = "plrswordR" if PLR.facing == 1 else "plrswordL"
-            else:
-                sprite = ("plrwalk0R" if PLR.facing == 1 else "plrwalk0L") \
-                    if self.walkframe < STEP_TIME else \
-                    ("plrwalk1R" if PLR.facing == 1 else "plrwalk1L")
-
-                self.walkframe = (self.walkframe + 1) % (STEP_TIME * 2)
-
-            offset = (64, 128)
-
-        else:
-            sprite = "plrairborneR" if PLR.facing == 1 else "plrairborneL"
-            offset = (64, 128)
-
-        self.canvas.create_image(
-            plrHurtbox[0].x + offset[0],
-            plrHurtbox[0].y + offset[1],
-            image=img(sprite)
-        )
+        PLR.render(self.canvas, self.textures)
+        PIDER.render(self.canvas, self.textures)
 
         if DEBUG:
             if not PLR.dashing:
                 self.canvas.create_rectangle(
-                    plrHurtbox[0].x, plrHurtbox[0].y,
-                    plrHurtbox[1].x, plrHurtbox[1].y,
+                    PLR.hurtbox[0].x, PLR.hurtbox[0].y,
+                    PLR.hurtbox[1].x, PLR.hurtbox[1].y,
                     outline="#ff0000"
                 )
 
             if PLR.attacking:
                 self.canvas.create_rectangle(
-                    plrHitbox[0].x, plrHitbox[0].y,
-                    plrHitbox[1].x, plrHitbox[1].y,
+                    PLR.hitbox[0].x, PLR.hitbox[0].y,
+                    PLR.hitbox[1].x, PLR.hitbox[1].y,
                     outline="#ffff00"
                 )
+            
+            self.canvas.create_rectangle(
+                PIDER.hurtbox[0].x, PIDER.hurtbox[0].y,
+                PIDER.hurtbox[1].x, PIDER.hurtbox[1].y,
+                outline="#ff00ff"
+            )
+
+            self.canvas.create_rectangle(
+                PIDER.passiveHitbox[0].x, PIDER.passiveHitbox[0].y,
+                PIDER.passiveHitbox[1].x, PIDER.passiveHitbox[1].y,
+                outline="#00ffff"
+            )
+
+            self.canvas.create_rectangle(
+                PIDER.hitbox[0].x, PIDER.hitbox[0].y,
+                PIDER.hitbox[1].x, PIDER.hitbox[1].y,
+                outline="#0000ff"
+            )
 
 
 if __name__ == "__main__":

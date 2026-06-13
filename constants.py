@@ -1,3 +1,6 @@
+import tkinter as tk
+import os
+
 class Vector2:
     def __init__(self, x, y):
         self.x = x
@@ -8,12 +11,12 @@ class Vector2:
         return self.x, self.y
     
 
-DEBUG = False
+DEBUG = True
 
 GRAVITY = -2
 FRICTION = 0.8
 
-MAXHP = 5
+MAXHP = 10
 HURT_COOLDOWN = 10
 HURT_TIME = 0
 
