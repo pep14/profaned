@@ -4,27 +4,6 @@ from entities import *
 from keybinds import *
 
 
-DEBUG = False
-
-GRAVITY = -2
-FRICTION = 0.8
-
-MAXHP = 5
-HURT_COOLDOWN = 10
-HURT_TIME = 0
-
-DASH_COOLDOWN = 15
-DASH_SPEED = 28
-DASH_TIME = 14
-
-JUMP_STRENGTH = 25
-PLR_SPEED = 3
-STEP_TIME = 8
-
-ATTACK_COOLDOWN = 15
-ATTACK_TIME = 10
-
-
 KB = Keybinds(
     move_left="a",
     move_right="d",
@@ -34,8 +13,6 @@ KB = Keybinds(
     debughit="h"
 )
 
-WINDOW_DIMENSIONS = Vector2(1280, 720)
-WINDOW_BORDERS = 80
 PLR = Player(0, 360, GRAVITY, FRICTION, WINDOW_DIMENSIONS, WINDOW_BORDERS, MAXHP)
 
 
@@ -154,8 +131,8 @@ class Profaned(tk.Tk):
     def render(self):
         self.canvas.delete("all")
 
-        hitbox = PLR.hitbox
-        hurtbox = PLR.hurtbox
+        plrHitbox = PLR.hitbox
+        plrHurtbox = PLR.hurtbox
 
         self.canvas.create_image(640, 360, image=self.textures["background"])
         self.canvas.create_image(PLR.x + 640, 640, image=self.textures["plrshadow"])
@@ -163,7 +140,7 @@ class Profaned(tk.Tk):
         for x in range(PLR.hp):
             self.canvas.create_image(32 + x * 32, 32, image=self.textures["hp"])
         
-        for x in range(PLR.maxhp - PLR.hp):
+        for x in range(MAXHP - PLR.hp):
             self.canvas.create_image(32 + (PLR.hp + x) * 32, 32, image=self.textures["hpe"])
 
         img = lambda n: self.textures[n]
@@ -193,23 +170,23 @@ class Profaned(tk.Tk):
             offset = (64, 128)
 
         self.canvas.create_image(
-            hurtbox[0].x + offset[0],
-            hurtbox[0].y + offset[1],
+            plrHurtbox[0].x + offset[0],
+            plrHurtbox[0].y + offset[1],
             image=img(sprite)
         )
 
         if DEBUG:
             if not PLR.dashing:
                 self.canvas.create_rectangle(
-                    hurtbox[0].x, hurtbox[0].y,
-                    hurtbox[1].x, hurtbox[1].y,
+                    plrHurtbox[0].x, plrHurtbox[0].y,
+                    plrHurtbox[1].x, plrHurtbox[1].y,
                     outline="#ff0000"
                 )
 
             if PLR.attacking:
                 self.canvas.create_rectangle(
-                    hitbox[0].x, hitbox[0].y,
-                    hitbox[1].x, hitbox[1].y,
+                    plrHitbox[0].x, plrHitbox[0].y,
+                    plrHitbox[1].x, plrHitbox[1].y,
                     outline="#ffff00"
                 )
 

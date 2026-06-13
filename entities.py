@@ -1,11 +1,4 @@
-class Vector2:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    @property
-    def tuple(self) -> tuple:
-        return self.x, self.y
+from constants import *
 
 
 class Entity(Vector2):
@@ -19,13 +12,7 @@ class Player(Entity):
     def __init__(self, x, y, gravity: float, friction: float, window: Vector2, windowBorders: int, maxhp):
         super().__init__(x, y)
 
-        self.window = window
-        self.gravity = gravity
-        self.friction = friction
-        self.windowBorders = windowBorders
-
-        self.maxhp = maxhp
-        self.hp = maxhp
+        self.hp = MAXHP
         self.hurtT = 0
 
         self.grounded = False
@@ -42,8 +29,8 @@ class Player(Entity):
 
     @property
     def hurtbox(self):
-        sx = self.x + self.window.x // 2
-        sy = self.window.y - self.y
+        sx = self.x + WINDOW_DIMENSIONS.x // 2
+        sy = WINDOW_DIMENSIONS.y - self.y
 
         return (
             Vector2(sx - 64, sy - 256),
@@ -52,8 +39,8 @@ class Player(Entity):
 
     @property
     def hitbox(self):
-        sx = self.x + self.window.x // 2 + 96 * self.facing
-        sy = self.window.y - self.y
+        sx = self.x + WINDOW_DIMENSIONS.x // 2 + 96 * self.facing
+        sy = WINDOW_DIMENSIONS.y - self.y
 
         return (
             Vector2(sx - 96, sy - 192),
@@ -65,19 +52,19 @@ class Player(Entity):
             self.attacking = True
 
     def update(self):
-        self.vy += self.gravity
+        self.vy += GRAVITY
         self.x += self.vx
         self.y += self.vy
 
-        if self.y < self.windowBorders:
-            self.y = self.windowBorders
+        if self.y < WINDOW_BORDERS:
+            self.y = WINDOW_BORDERS
             self.vy = 0
             self.grounded = True
         else:
             self.grounded = False
 
-        min_x = -self.window.x // 2 + self.windowBorders + 64
-        max_x = self.window.x // 2 - self.windowBorders - 64
+        min_x = -WINDOW_DIMENSIONS.x // 2 + WINDOW_BORDERS + 64
+        max_x = WINDOW_DIMENSIONS.x // 2 - WINDOW_BORDERS - 64
 
         if self.x < min_x:
             self.x = min_x
@@ -91,4 +78,4 @@ class Player(Entity):
             self.vx = 0
 
         if not self.dashing:
-            self.vx *= self.friction
+            self.vx *= FRICTION
