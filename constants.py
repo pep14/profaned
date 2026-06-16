@@ -1,4 +1,5 @@
 import tkinter as tk
+import random
 import os
 
 class Vector2:
@@ -11,7 +12,7 @@ class Vector2:
         return self.x, self.y
     
 
-DEBUG = False
+DEBUG = True
 
 GRAVITY = -2
 FRICTION = 0.8
@@ -33,3 +34,6 @@ ATTACK_TIME = 10
 
 WINDOW_DIMENSIONS = Vector2(1280, 720)
 WINDOW_BORDERS = 80
+
+# higher = takes longer to become
+PIDER_RANGED_FREQUENCY = 7500

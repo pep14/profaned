@@ -82,6 +82,14 @@ class Profaned(tk.Tk):
             PLR.vx = -20
             HURT_TIME = HURT_COOLDOWN
 
+        for projectile in PIDER.projectiles:
+            if HURT_TIME == 0 and box_overlap(PLR.hurtbox, projectile.hitbox):
+                PLR.dashing = False
+                PLR.hp -= 1
+                PLR.vx = -20
+                HURT_TIME = HURT_COOLDOWN
+
+
         if KB.jump in self.keysDown and PLR.grounded:
             PLR.vy = JUMP_STRENGTH
 
@@ -181,6 +189,13 @@ class Profaned(tk.Tk):
                 PIDER.hitbox[1].x, PIDER.hitbox[1].y,
                 outline="#0000ff"
             )
+
+            for projectile in PIDER.projectiles:
+                self.canvas.create_rectangle(
+                    projectile.hitbox[0].x, projectile.hitbox[0].y,
+                    projectile.hitbox[1].x, projectile.hitbox[1].y,
+                    outline="#0000ff"
+                )
 
 
 if __name__ == "__main__":

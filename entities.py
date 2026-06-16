@@ -127,6 +127,34 @@ class Player(Entity):
         )
 
 
+class PiderProjectile(Entity):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.projectileSpeed = 25
+
+    @property
+    def hitbox(self):
+        sx = self.x + WINDOW_DIMENSIONS.x // 2
+        sy = WINDOW_DIMENSIONS.y - self.y
+
+        return (
+            Vector2(sx - 8, sy - 8),
+            Vector2(sx + 8, sy + 8)
+        )
+
+    def update(self):
+        self.x -= self.projectileSpeed
+
+    def render(self, canvas: tk.Canvas, textures: dict):
+        img = lambda n: textures[n]
+
+        canvas.create_image(
+            self.hitbox[0].x + 8,
+            self.hitbox[0].y + 8,
+            image=img("piderprojectile")
+        )
+
+
 class Pider(Entity):
     def __init__(self, x, y):
         super().__init__(x, y)
@@ -137,7 +165,12 @@ class Pider(Entity):
         self.walkframe = 0
         self.speed = 5
 
-        self.idle = True
+        self.ticksSinceRanged = 0
+        self.ticksSinceProjectile = 0
+        self.action = None
+        self.stationary = True
+
+        self.projectiles: list[PiderProjectile] = []
 
     @property
     def hurtbox(self):
@@ -170,15 +203,42 @@ class Pider(Entity):
         )
 
     def update(self, px):
-        targetx = px + 320
+        if all(p.x < -WINDOW_DIMENSIONS.x // 2 for p in self.projectiles):
+            self.projectiles = []
+        
+        for projectile in self.projectiles:
+            projectile.update()
+
+        if self.action == "ranged":
+            if len(self.projectiles) > 5:
+                self.action = None
+                return
+
+            if self.stationary:
+                if self.ticksSinceProjectile > 25:
+                    self.ticksSinceProjectile = 0
+                    self.projectiles.append(
+                        PiderProjectile(self.x - 96, self.y - 16)
+                    )
+                self.ticksSinceProjectile += 1
+
+            targetx = 400
+            self.ticksSinceRanged = 0
+
+        else:
+            targetx = px + 320
+            self.ticksSinceRanged += 1
+
+            if random.randint(0, PIDER_RANGED_FREQUENCY) < self.ticksSinceRanged:
+                self.action = "ranged"
 
         dx = targetx - self.x
 
         if dx == 0:
-            self.idle = True
+            self.stationary = True
             return
         
-        self.idle = False
+        self.stationary = False
 
         if abs(dx) <= self.speed:
             self.x = targetx
@@ -186,14 +246,14 @@ class Pider(Entity):
             self.x += self.speed if dx > 0 else -self.speed
 
         if (nx := WINDOW_DIMENSIONS.x // 2 - 260) < self.x:
-            self.idle = True
+            self.stationary = True
             self.x = nx
     
     def render(self, canvas: tk.Canvas, textures: dict):
         img = lambda n: textures[n]
 
-        sprite = "piderwalk0" \
-            if self.walkframe < self.stepT or self.idle else \
+        sprite = "piderflipped" if self.action == "ranged" and self.stationary else \
+            "piderwalk0" if self.walkframe < self.stepT or self.stationary else \
             "piderwalk1"
 
         self.walkframe = (self.walkframe + 1) % (self.stepT * 2)
@@ -203,3 +263,6 @@ class Pider(Entity):
             self.hurtbox[0].y + 96,
             image=img(sprite)
         )
+
+        for child in self.projectiles:
+            child.render(canvas, textures)
