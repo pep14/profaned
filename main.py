@@ -118,6 +118,9 @@ class Profaned(tk.Tk):
         if HURT_TIME > 0:
             HURT_TIME -= 1
 
+        if PLR.attackT == ATTACK_TIME - 1 and box_overlap(PLR.hitbox, PIDER.hurtbox):
+            PIDER.hp -= 1
+
         if HURT_TIME == 0 and box_overlap(PLR.hurtbox, PIDER.passiveHitbox):
             PLR.dashing = False
             PLR.hp -= 1

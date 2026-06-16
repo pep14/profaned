@@ -203,6 +203,7 @@ class Pider(Entity):
         )
 
     def update(self, px):
+        print(self.hp)
         if all(p.x < -WINDOW_DIMENSIONS.x // 2 for p in self.projectiles):
             self.projectiles = []
         
