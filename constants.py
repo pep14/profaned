@@ -35,5 +35,5 @@ ATTACK_TIME = 10
 WINDOW_DIMENSIONS = Vector2(1280, 720)
 WINDOW_BORDERS = 80
 
-# higher = takes longer to become
+# higher = takes longer to become ranged
 PIDER_RANGED_FREQUENCY = 7500

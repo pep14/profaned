@@ -39,6 +39,7 @@ class Profaned(tk.Tk):
 
             "hp": tk.PhotoImage(file='./textures/hitpoint.png').zoom(4, 4),
             "hpe": tk.PhotoImage(file='./textures/hitpoint_empty.png').zoom(4, 4),
+            "piderhp": tk.PhotoImage(file='./textures/piderhp.png').zoom(4, 4),
         }
 
         for filename in os.listdir("./textures/R/"):
@@ -154,6 +155,27 @@ class Profaned(tk.Tk):
         self.canvas.create_image(640, 360, image=self.textures["background"])
 
         self.canvas.create_image(PLR.x + 640, 640, image=self.textures["plrshadow"])
+
+        self.canvas.create_image(
+            WINDOW_DIMENSIONS.x // 2, 
+            WINDOW_DIMENSIONS.y - 75, 
+            image=self.textures["piderhpbar"]
+        )
+
+        self.canvas.create_rectangle(
+            WINDOW_DIMENSIONS.x // 2, 
+            WINDOW_DIMENSIONS.y - 75, 
+            WINDOW_DIMENSIONS.x // 2 + 10, 
+            WINDOW_DIMENSIONS.y - 75 + 10, 
+        )
+
+        self.piderHpImage = tk.PhotoImage(file='./textures/piderhp.png').zoom(20 * PIDER.hp, 4)
+
+        self.canvas.create_image(
+            WINDOW_DIMENSIONS.x // 2, 
+            WINDOW_DIMENSIONS.y - 31, 
+            image=self.piderHpImage
+        )
 
         for x in range(PLR.hp):
             self.canvas.create_image(32 + x * 32, 32, image=self.textures["hp"])
