@@ -11,7 +11,7 @@ class Vector2:
         return self.x, self.y
     
 
-DEBUG = True
+DEBUG = False
 
 GRAVITY = -2
 FRICTION = 0.8

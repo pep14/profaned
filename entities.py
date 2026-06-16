@@ -133,7 +133,7 @@ class Pider(Entity):
 
         self.maxhp = 30
         self.hp = self.maxhp
-        self.stepT = 10
+        self.stepT = 5
         self.walkframe = 0
         self.speed = 5
 
