@@ -10,9 +10,6 @@ class Vector2:
     @property
     def tuple(self) -> tuple:
         return self.x, self.y
-    
-
-DEBUG = True
 
 GRAVITY = -2
 FRICTION = 0.8
@@ -35,5 +32,15 @@ ATTACK_TIME = 10
 WINDOW_DIMENSIONS = Vector2(1280, 720)
 WINDOW_BORDERS = 80
 
-# higher = takes longer to become ranged
-PIDER_RANGED_FREQUENCY = 7500
+A_NONE = 0
+A_RANGED = 1
+A_RANGED_ACTIVE = 2
+A_MELEE = 3
+A_MELEE_WINDUP = 4
+A_MELEE_ACTIVE = 5
+
+STATE_POOL = [A_MELEE, A_MELEE, A_MELEE, A_RANGED]
+
+PIDER_PROJECTILE_CAP = 3
+PIDER_ATTACK_WINDUP = 25
+PIDER_ATTACK = 15

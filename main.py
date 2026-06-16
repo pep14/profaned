@@ -122,6 +122,11 @@ class Profaned(tk.Tk):
         if PLR.attackT == ATTACK_TIME - 1 and box_overlap(PLR.hitbox, PIDER.hurtbox):
             PIDER.hp -= 1
 
+        if PIDER.attackT == 1 and box_overlap(PLR.hurtbox, PIDER.hitbox) and not PLR.dashing:
+            PLR.hp -= 1
+            PLR.vx = -20
+            HURT_TIME = HURT_COOLDOWN
+
         if HURT_TIME == 0 and box_overlap(PLR.hurtbox, PIDER.passiveHitbox):
             PLR.dashing = False
             PLR.hp -= 1
@@ -185,47 +190,6 @@ class Profaned(tk.Tk):
 
         PLR.render(self.canvas, self.textures)
         PIDER.render(self.canvas, self.textures)
-
-        if DEBUG:
-            if not PLR.dashing:
-                self.canvas.create_rectangle(
-                    PLR.hurtbox[0].x, PLR.hurtbox[0].y,
-                    PLR.hurtbox[1].x, PLR.hurtbox[1].y,
-                    outline="#ff0000"
-                )
-
-            if PLR.attacking:
-                self.canvas.create_rectangle(
-                    PLR.hitbox[0].x, PLR.hitbox[0].y,
-                    PLR.hitbox[1].x, PLR.hitbox[1].y,
-                    outline="#ffff00"
-                )
-            
-            self.canvas.create_rectangle(
-                PIDER.hurtbox[0].x, PIDER.hurtbox[0].y,
-                PIDER.hurtbox[1].x, PIDER.hurtbox[1].y,
-                outline="#ff00ff"
-            )
-
-            self.canvas.create_rectangle(
-                PIDER.passiveHitbox[0].x, PIDER.passiveHitbox[0].y,
-                PIDER.passiveHitbox[1].x, PIDER.passiveHitbox[1].y,
-                outline="#00ffff"
-            )
-
-            self.canvas.create_rectangle(
-                PIDER.hitbox[0].x, PIDER.hitbox[0].y,
-                PIDER.hitbox[1].x, PIDER.hitbox[1].y,
-                outline="#0000ff"
-            )
-
-            for projectile in PIDER.projectiles:
-                self.canvas.create_rectangle(
-                    projectile.hitbox[0].x, projectile.hitbox[0].y,
-                    projectile.hitbox[1].x, projectile.hitbox[1].y,
-                    outline="#0000ff"
-                )
-
 
 if __name__ == "__main__":
     game = Profaned()

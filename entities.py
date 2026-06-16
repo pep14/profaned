@@ -165,12 +165,19 @@ class Pider(Entity):
         self.walkframe = 0
         self.speed = 5
 
-        self.ticksSinceRanged = 0
-        self.ticksSinceProjectile = 0
-        self.action = None
+        self.state = A_NONE
         self.stationary = True
+        self.ticksSinceLastProjectile = 0
+        self.attackWindupT = 0
+        self.attackT = 0
 
         self.projectiles: list[PiderProjectile] = []
+        self.stateSpritesheet = {
+            A_NONE: "piderwalk0",
+            A_RANGED_ACTIVE: "piderflipped",
+            A_MELEE_WINDUP: "piderattackwindup",
+            A_MELEE_ACTIVE: "piderattack",
+        }
 
     @property
     def hurtbox(self):
@@ -202,37 +209,8 @@ class Pider(Entity):
             Vector2(sx + 80, sy + 64)
         )
 
-    def update(self, px):
-        if all(p.x < -WINDOW_DIMENSIONS.x // 2 for p in self.projectiles):
-            self.projectiles = []
-        
-        for projectile in self.projectiles:
-            projectile.update()
-
-        if self.action == "ranged":
-            if len(self.projectiles) > 5:
-                self.action = None
-                return
-
-            if self.stationary:
-                if self.ticksSinceProjectile > 25:
-                    self.ticksSinceProjectile = 0
-                    self.projectiles.append(
-                        PiderProjectile(self.x - 96, self.y - 16)
-                    )
-                self.ticksSinceProjectile += 1
-
-            targetx = 400
-            self.ticksSinceRanged = 0
-
-        else:
-            targetx = px + 320
-            self.ticksSinceRanged += 1
-
-            if random.randint(0, PIDER_RANGED_FREQUENCY) < self.ticksSinceRanged:
-                self.action = "ranged"
-
-        dx = targetx - self.x
+    def moveToward(self, target):
+        dx = target - self.x
 
         if dx == 0:
             self.stationary = True
@@ -241,26 +219,91 @@ class Pider(Entity):
         self.stationary = False
 
         if abs(dx) <= self.speed:
-            self.x = targetx
+            self.x = target
         else:
             self.x += self.speed if dx > 0 else -self.speed
 
         if (nx := WINDOW_DIMENSIONS.x // 2 - 260) < self.x:
-            self.stationary = True
             self.x = nx
+
+    def update(self, plrX):
+        # projectile updates
+        if all(p.x < -WINDOW_DIMENSIONS.x // 2 for p in self.projectiles):
+            self.projectiles = []
+
+        for p in self.projectiles:
+            p.update()
+        
+        # pider :3
+        match self.state:
+            case 0:
+                self.state = random.choice(STATE_POOL)
+
+            case 1:
+                target = 380
+
+                if self.x == target:
+                    self.state = A_RANGED_ACTIVE
+                    return
+
+                self.moveToward(target)
+
+            case 2:
+                if len(self.projectiles) > PIDER_PROJECTILE_CAP - 1:
+                    self.state = A_MELEE
+                    return
+            
+                if self.ticksSinceLastProjectile > 25:
+                    self.ticksSinceLastProjectile = 0
+                    self.projectiles.append(
+                        PiderProjectile(self.x - 96, self.y - 16)
+                    )
+                
+                self.ticksSinceLastProjectile += 1
+
+            case 3:
+                target = plrX + 320
+
+                if self.x <= target:
+                    self.state = A_MELEE_WINDUP
+                    return
+
+                self.moveToward(target)
+
+            case 4:
+                self.attackWindupT += 1
+
+                if self.attackWindupT >= PIDER_ATTACK_WINDUP:
+                    self.state = A_MELEE_ACTIVE
+                    self.attackWindupT = 0
+                    return
+            
+            case 5:
+                self.attackT += 1
+
+                if self.attackT >= PIDER_ATTACK:
+                    self.attackT = 0
+                    self.state = A_NONE
     
     def render(self, canvas: tk.Canvas, textures: dict):
         img = lambda n: textures[n]
 
-        sprite = "piderflipped" if self.action == "ranged" and self.stationary else \
-            "piderwalk0" if self.walkframe < self.stepT or self.stationary else \
-            "piderwalk1"
+        if self.state in [A_MELEE, A_RANGED]:
+            sprite = "piderwalk0" \
+                if self.walkframe < self.stepT else \
+                "piderwalk1"
+            
+            self.walkframe = (self.walkframe + 1) % (self.stepT * 2)
 
-        self.walkframe = (self.walkframe + 1) % (self.stepT * 2)
+        else:
+            sprite = self.stateSpritesheet[self.state]
+
+        ox = 96 if self.state == A_MELEE_ACTIVE else 192
+        oy = 96
 
         canvas.create_image(
-            self.hurtbox[0].x + 192,
-            self.hurtbox[0].y + 96,
+            self.hurtbox[0].x + ox,
+            self.hurtbox[0].y + oy,
             image=img(sprite)
         )
 
