@@ -66,30 +66,7 @@ class Profaned(tk.Tk):
     def _keyReleased(self, event):
         self.keysDown.discard(event.keysym)
 
-    def run(self):
-        global HURT_TIME
-
-        if PLR.hp <= 0:
-            self.destroy()
-            return
-        
-        if HURT_TIME > 0:
-            HURT_TIME -= 1
-
-        if HURT_TIME == 0 and box_overlap(PLR.hurtbox, PIDER.passiveHitbox):
-            PLR.dashing = False
-            PLR.hp -= 1
-            PLR.vx = -20
-            HURT_TIME = HURT_COOLDOWN
-
-        for projectile in PIDER.projectiles:
-            if HURT_TIME == 0 and box_overlap(PLR.hurtbox, projectile.hitbox):
-                PLR.dashing = False
-                PLR.hp -= 1
-                PLR.vx = -20
-                HURT_TIME = HURT_COOLDOWN
-
-
+    def movementChecks(self):
         if KB.jump in self.keysDown and PLR.grounded:
             PLR.vy = JUMP_STRENGTH
 
@@ -134,6 +111,33 @@ class Profaned(tk.Tk):
             PLR.attackT -= 1
             if PLR.attackT <= 0:
                 PLR.attacking = False
+
+    def hitboxChecks(self):
+        global HURT_TIME
+
+        if HURT_TIME > 0:
+            HURT_TIME -= 1
+
+        if HURT_TIME == 0 and box_overlap(PLR.hurtbox, PIDER.passiveHitbox):
+            PLR.dashing = False
+            PLR.hp -= 1
+            PLR.vx = -20
+            HURT_TIME = HURT_COOLDOWN
+
+        for projectile in PIDER.projectiles:
+            if HURT_TIME == 0 and box_overlap(PLR.hurtbox, projectile.hitbox):
+                PLR.dashing = False
+                PLR.hp -= 1
+                PLR.vx = -20
+                HURT_TIME = HURT_COOLDOWN
+
+    def run(self):
+        if PLR.hp <= 0:
+            self.destroy()
+            return
+        
+        self.hitboxChecks()
+        self.movementChecks()
 
         PLR.update()
         PIDER.update(PLR.x)
