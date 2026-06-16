@@ -1,4 +1,5 @@
-from entities import *
+from player import *
+from pider import Pider
 from keybinds import *
 
 

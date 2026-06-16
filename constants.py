@@ -1,15 +1,7 @@
 import tkinter as tk
 import random
 import os
-
-class Vector2:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    @property
-    def tuple(self) -> tuple:
-        return self.x, self.y
+from basicClasses import *
 
 GRAVITY = -2
 FRICTION = 0.8
